@@ -21,11 +21,19 @@ export const site = {
 };
 
 export const hero = {
-  eyebrow: "Software Consultant · ITPlusPoint · Bhubaneswar",
-  headline: ["Business software", "in .NET and React,", "with AI where it", "saves real hours."],
+  role: "Software Consultant",
+  company: "ITPlusPoint",
+  since: "Since Nov 2023",
+  coords: "20.2961° N · 85.8245° E",
+  place: "Bhubaneswar, Odisha",
+  tagline: "I build the .NET and React systems businesses run on, and wire AI into them where it saves real hours.",
   intro:
     "Three years at ITPlusPoint, from writing my first C# and SQL as a pre-intern to building CRMs, investment platforms and agentic AI tools as a consultant.",
 };
+
+// Read word by word in the About section.
+export const manifesto =
+  "I joined ITPlusPoint as a pre-intern in November 2023. Six roles in, I take a feature from the SQL table to the screen, and I add AI only where it takes real work off someone's desk.";
 
 export const about = {
   paragraphs: [

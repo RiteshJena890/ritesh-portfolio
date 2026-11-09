@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { site } from "@/content/profile";
-import { MotionRoot } from "@/components/motion/motion-root";
+import { MotionRoot } from "@/components/core/motion-root";
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -42,8 +42,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#e6e9e1" },
-    { media: "(prefers-color-scheme: dark)", color: "#0d1320" },
+    { media: "(prefers-color-scheme: light)", color: "#eceef1" },
+    { media: "(prefers-color-scheme: dark)", color: "#06070a" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -76,7 +76,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </head>
       <body>
-        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:bg-ink focus:text-bg focus:px-4 focus:py-2">
+        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-full focus:bg-[var(--ink)] focus:px-5 focus:py-3 focus:text-[var(--bg)]">
           Skip to content
         </a>
         <MotionRoot>{children}</MotionRoot>

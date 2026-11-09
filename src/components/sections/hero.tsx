@@ -1,129 +1,131 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { motion } from "motion/react";
-import { ArrowDownRight, ArrowUpRight, FileText } from "lucide-react";
+import { useEffect, useState } from "react";
 import { hero, site } from "@/content/profile";
-import { SplitText } from "@/components/motion/split-text";
-import { Magnetic } from "@/components/motion/magnetic";
-import { scrollToHash, useMotionEnv } from "@/components/motion/motion-root";
-import { useIntroDone } from "./loader";
+import { Scramble } from "@/components/core/scramble";
+import { PillLink } from "@/components/core/pill";
+import { scrollToHash, useMotionEnv } from "@/components/core/motion-root";
 
-const StackScene = dynamic(() => import("@/components/three/stack-scene"), {
-  ssr: false,
-  loading: () => null,
-});
+const ease = [0.16, 1, 0.3, 1] as const;
 
-const ease = [0.22, 1, 0.36, 1] as const;
+/** Counts 0 → 100 while the particle field condenses into the name. */
+function useCompile(reduced: boolean) {
+  const [n, setN] = useState(reduced ? 100 : 0);
+  useEffect(() => {
+    if (reduced) {
+      setN(100); // eslint-disable-line react-hooks/set-state-in-effect -- reduced motion skips the count
+      return;
+    }
+    const start = performance.now();
+    let raf = 0;
+    const step = (now: number) => {
+      const k = Math.min(1, (now - start) / 2400);
+      setN(Math.round((1 - Math.pow(1 - k, 2.4)) * 100));
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [reduced]);
+  return n;
+}
 
 export function Hero() {
-  const ready = useIntroDone();
-  const { lenis, reduced } = useMotionEnv();
-  const go = (h: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    scrollToHash(h, lenis);
-  };
-
-  const facts = [
-    ["Since", "Nov 2023 at ITPlusPoint"],
-    ["Built", "6 products, plus AI POCs"],
-    ["Awarded", "Power Programmer 2025"],
-  ];
+  const { reduced, lenis } = useMotionEnv();
+  const n = useCompile(reduced);
+  const done = n >= 100;
+  const words = hero.tagline.split(" ");
 
   return (
-    <section id="top" className="relative overflow-hidden pt-[96px] lg:min-h-[100svh]">
-      {/* 3D stack: right half on desktop, a band above the text on phones */}
-      <div className="relative h-[46vh] min-h-[300px] w-full lg:absolute lg:inset-y-0 lg:right-0 lg:h-auto lg:w-[56%]">
-        <motion.div
-          className="absolute inset-0"
-          initial={{ opacity: 0, scale: 0.92 }}
-          animate={ready ? { opacity: 1, scale: 1 } : undefined}
-          transition={{ duration: 1.6, ease, delay: 0.2 }}
-        >
-          <StackScene reduced={reduced} />
+    <section id="top" data-shape="0" className="relative flex min-h-[100svh] flex-col justify-between overflow-hidden pt-[96px] pb-8" aria-labelledby="hero-name">
+      {/* HUD: top corners read like an instrument */}
+      <div className="wrap flex items-start justify-between gap-6">
+        <motion.div className="mono grid gap-0.5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3, duration: 1 }}>
+          <span className="kicker">
+            <Scramble text={hero.role} delay={300} />
+          </span>
+          <span className="muted">
+            <Scramble text={`${hero.company} · ${hero.since}`} delay={500} />
+          </span>
+        </motion.div>
+        <motion.div className="mono hidden text-right sm:grid sm:gap-0.5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 1 }}>
+          <Scramble text={hero.coords} delay={600} />
+          <span className="muted">
+            <Scramble text={hero.place} delay={800} />
+          </span>
         </motion.div>
       </div>
 
-      <div className="wrap relative grid gap-10 pb-16 lg:min-h-[calc(100svh-96px)] lg:content-center lg:pb-24">
-        <div className="grid max-w-[720px] gap-7">
-          <motion.div
-            className="flex items-center gap-3"
-            initial={{ opacity: 0, y: 16 }}
-            animate={ready ? { opacity: 1, y: 0 } : undefined}
-            transition={{ duration: 0.8, ease }}
-          >
-            <span className="relative block h-12 w-12 overflow-hidden rounded-full ring-2 ring-[var(--mark)] ring-offset-2 ring-offset-[var(--bg)]">
-              {/* eslint-disable-next-line @next/next/no-img-element -- 48px avatar; works in the static preview too */}
-              <img src={site.photo} alt="Portrait of Ritesh Jena" width={48} height={48} className="h-full w-full object-cover" fetchPriority="high" />
-            </span>
-            <span className="label">{hero.eyebrow}</span>
-          </motion.div>
-
-          <h1 className="display text-[clamp(56px,11vw,152px)]">
-            {ready ? <SplitText text={site.name} stagger={0.045} /> : <span className="opacity-0">{site.name}</span>}
-          </h1>
-
-          <p className="text-[clamp(22px,2.7vw,34px)] leading-[1.18] font-medium tracking-[-0.01em]" style={{ perspective: 800 }}>
-            {hero.headline.map((line, i) => (
-              <span key={line} className="block overflow-hidden pb-[0.06em]">
-                <motion.span
-                  className="block"
-                  style={{ transformOrigin: "0% 100%" }}
-                  initial={{ y: "105%", rotateX: -40, opacity: 0 }}
-                  animate={ready ? { y: "0%", rotateX: 0, opacity: 1 } : undefined}
-                  transition={{ duration: 1, ease, delay: 0.55 + i * 0.09 }}
-                >
-                  {i === hero.headline.length - 1 ? <span className="mark">{line}</span> : line}
-                </motion.span>
-              </span>
-            ))}
-          </p>
-
-          <motion.p
-            className="max-w-[54ch] text-[var(--ink-2)]"
-            initial={{ opacity: 0, y: 20 }}
-            animate={ready ? { opacity: 1, y: 0 } : undefined}
-            transition={{ duration: 0.9, ease, delay: 1 }}
-          >
-            {hero.intro}
-          </motion.p>
-
-          <motion.div
-            className="flex flex-wrap items-center gap-3"
-            initial={{ opacity: 0, y: 20 }}
-            animate={ready ? { opacity: 1, y: 0 } : undefined}
-            transition={{ duration: 0.9, ease, delay: 1.15 }}
-          >
-            <Magnetic>
-              <a href="#work" onClick={go("#work")} className="btn btn-primary">
-                Explore projects <ArrowDownRight size={18} />
-              </a>
-            </Magnetic>
-            <Magnetic>
-              <a href={site.resume} target="_blank" rel="noreferrer" className="btn btn-ghost">
-                <FileText size={18} /> Resume
-              </a>
-            </Magnetic>
-            <a href="#contact" onClick={go("#contact")} className="link-sweep ml-2 inline-flex items-center gap-1 py-3 text-[15px] font-semibold">
-              Get in touch <ArrowUpRight size={16} />
-            </a>
-          </motion.div>
-        </div>
-
-        <motion.dl
-          className="grid max-w-[720px] grid-cols-1 gap-x-8 gap-y-3 border-t border-[var(--line)] pt-6 sm:grid-cols-3"
-          initial={{ opacity: 0 }}
-          animate={ready ? { opacity: 1 } : undefined}
-          transition={{ duration: 1, delay: 1.35 }}
+      {/* The name is drawn by the particle field; this is the accessible and no-WebGL version */}
+      <div className="wrap relative flex flex-1 items-center justify-center max-md:min-h-[34svh] max-md:items-start">
+        <h1 id="hero-name" className="gl-name-fallback h-xl text-center font-bold">
+          {site.name}
+        </h1>
+        <motion.div
+          className="mono pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 tabular-nums"
+          animate={{ opacity: done ? 0 : 1 }}
+          transition={{ duration: 0.6, delay: done ? 0.4 : 0 }}
+          aria-hidden
         >
-          {facts.map(([k, v]) => (
-            <div key={k} className="grid gap-1">
-              <dt className="label">{k}</dt>
-              <dd className="m-0 text-[15px] font-semibold">{v}</dd>
-            </div>
-          ))}
-        </motion.dl>
+          Compiling signal {String(n).padStart(3, "0")}%
+        </motion.div>
       </div>
+
+      <div className="wrap grid items-end gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+        <p className="max-w-[24ch] font-[family-name:var(--font-display)] text-[clamp(22px,2.5vw,36px)] leading-[1.12] font-medium tracking-[-0.03em]">
+          {words.map((w, i) => (
+            <motion.span
+              key={i}
+              className="inline-block whitespace-pre"
+              initial={{ opacity: 0, filter: "blur(14px)", y: 14 }}
+              animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+              transition={{ duration: 1.1, ease, delay: 1.6 + i * 0.05 }}
+            >
+              {w === "AI" ? <span className="text-[var(--accent)]">{w}</span> : w}
+              {i < words.length - 1 ? " " : ""}
+            </motion.span>
+          ))}
+        </p>
+
+        <motion.div
+          className="grid gap-6 lg:justify-items-end"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease, delay: 2.3 }}
+        >
+          <p className="max-w-[44ch] text-[15.5px] muted lg:text-right">{hero.intro}</p>
+          <div className="flex flex-wrap gap-3 lg:justify-end">
+            <PillLink
+              href="#work"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToHash("#work", lenis);
+              }}
+              variant="solid"
+            >
+              See the work <span aria-hidden>↓</span>
+            </PillLink>
+            <PillLink href={site.resume} target="_blank" rel="noreferrer" variant="ghost">
+              Resume <span aria-hidden>↗</span>
+            </PillLink>
+          </div>
+        </motion.div>
+      </div>
+
+      <motion.div
+        className="wrap mt-8 flex items-center justify-between"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2.8, duration: 1 }}
+      >
+        <span className="mono muted hidden md:inline">Move your cursor through the name</span><span className="md:hidden" />
+        <span className="mono flex items-center gap-3 muted">
+          Scroll
+          <span className="relative block h-8 w-px overflow-hidden bg-[var(--line)]" aria-hidden>
+            <span className="scroll-cue absolute inset-x-0 top-0 h-3 bg-[var(--ink)]" />
+          </span>
+        </span>
+      </motion.div>
     </section>
   );
 }

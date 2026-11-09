@@ -1,272 +1,250 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowUpRight, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { projects, type Project } from "@/content/profile";
-import { SectionHead } from "@/components/ui/section-head";
-import { ProjectDiagram } from "@/components/ui/project-diagram";
-import { Tilt } from "@/components/motion/tilt";
-import { useMotionEnv } from "@/components/motion/motion-root";
+import { useMotionEnv } from "@/components/core/motion-root";
+import { PillButton } from "@/components/core/pill";
 
-const hashFor = (slug: string) => `#work-${slug}`;
-
+/*
+  Section style: "deck". Projects are a physical stack of cards. Each one slides
+  over the last, and the cards underneath sink, tilt back and dim. Opening a case
+  study tears a circular hole in the page from the point you clicked.
+*/
 export function Work() {
+  const root = useRef<HTMLElement>(null);
   const { reduced, lenis } = useMotionEnv();
-  const section = useRef<HTMLElement>(null);
-  const track = useRef<HTMLUListElement>(null);
-  const [openSlug, setOpenSlug] = useState<string | null>(null);
-  const lastFocus = useRef<HTMLElement | null>(null);
-
-  const open = useCallback((slug: string) => {
-    lastFocus.current = document.activeElement as HTMLElement;
-    setOpenSlug(slug);
-    try {
-      history.replaceState(null, "", hashFor(slug));
-    } catch {}
-  }, []);
-  const close = useCallback(() => {
-    setOpenSlug(null);
-    try {
-      history.replaceState(null, "", "#work");
-    } catch {}
-    lastFocus.current?.focus();
-  }, []);
-
-  // Deep links: #work-leadgen opens that project.
-  useEffect(() => {
-    const fromHash = () => {
-      const m = location.hash.match(/^#work-(.+)$/);
-      if (m && projects.some((p) => p.slug === m[1])) setOpenSlug(m[1]);
-    };
-    fromHash();
-    window.addEventListener("hashchange", fromHash);
-    return () => window.removeEventListener("hashchange", fromHash);
-  }, []);
+  const [open, setOpen] = useState<{ p: Project; x: number; y: number } | null>(null);
 
   useEffect(() => {
-    if (openSlug) lenis?.stop();
-    else lenis?.start();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && openSlug && close();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [openSlug, lenis, close]);
-
-  // Desktop: pin the section and move the cards sideways while scrolling down.
-  useEffect(() => {
-    if (reduced || !section.current || !track.current) return;
-    const mm = gsap.matchMedia();
-    mm.add("(min-width: 1024px)", () => {
-      const el = track.current!;
-      const distance = () => Math.max(0, el.scrollWidth - el.clientWidth);
-      const tween = gsap.to(el, {
-        x: () => -distance(),
-        ease: "none",
-        scrollTrigger: {
-          trigger: section.current,
-          start: "top top",
-          end: () => `+=${distance()}`,
-          pin: true,
-          scrub: 0.8,
-          invalidateOnRefresh: true,
-        },
+    if (reduced || !root.current) return;
+    const ctx = gsap.context(() => {
+      const cards = gsap.utils.toArray<HTMLElement>(".wk-card");
+      cards.forEach((card, i) => {
+        const next = cards[i + 1];
+        if (!next) return;
+        gsap.to(card.querySelector(".wk-inner"), {
+          scale: 0.9,
+          rotateX: 9,
+          y: -30,
+          opacity: 0.35,
+          ease: "none",
+          scrollTrigger: { trigger: next, start: "top bottom", end: "top 20%", scrub: true },
+        });
       });
-      gsap.utils.toArray<HTMLElement>(".work-card-3d").forEach((card) => {
-        gsap.fromTo(
-          card,
-          { rotateY: -18, z: -80 },
-          {
-            rotateY: 12,
-            z: 0,
-            ease: "none",
-            scrollTrigger: {
-              trigger: card,
-              containerAnimation: tween,
-              start: "left right",
-              end: "right left",
-              scrub: true,
-            },
-          },
-        );
-      });
-      return () => tween.scrollTrigger?.kill();
-    });
-    const refresh = setTimeout(() => ScrollTrigger.refresh(), 500);
-    return () => {
-      clearTimeout(refresh);
-      mm.revert();
-    };
+      gsap.fromTo(".wk-head-line", { yPercent: 110 }, { yPercent: 0, stagger: 0.1, duration: 1.2, ease: "expo.out", scrollTrigger: { trigger: ".wk-head", start: "top 80%" } });
+    }, root);
+    return () => ctx.revert();
   }, [reduced]);
 
-  const current = projects.find((p) => p.slug === openSlug) ?? null;
+  useEffect(() => {
+    if (open) lenis?.stop();
+    else lenis?.start();
+  }, [open, lenis]);
 
   return (
-    <section ref={section} id="work" className="section overflow-hidden lg:flex lg:min-h-[100svh] lg:flex-col lg:justify-center lg:py-[96px]" aria-labelledby="work-title">
-      <div className="wrap">
-        <SectionHead
-          id="work-title"
-          path="/work"
-          title="Selected work"
-          lede="Six products I built modules for at ITPlusPoint, plus my AI proofs of concept and chatbots. Open a project for the details."
-        />
+    <section ref={root} id="work" data-shape="5" data-alpha="0.55" className="relative pt-28 pb-24" aria-labelledby="work-title">
+      <div className="wk-head wrap mb-14 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
+        <h2 id="work-title" className="h-xl">
+          <span className="block overflow-hidden pb-[0.06em]">
+            <span className="wk-head-line block">Selected</span>
+          </span>
+          <span className="block overflow-hidden pb-[0.06em]">
+            <span className="wk-head-line block text-[var(--accent)]">work</span>
+          </span>
+        </h2>
+        <p className="muted max-w-[40ch] lg:text-right">
+          Seven projects from my work at ITPlusPoint. None of them has a public demo or repository I can link, so each case study tells you what I built instead.
+        </p>
       </div>
 
-      <div className="wrap lg:max-w-none lg:pr-0">
-        <ul
-          ref={track}
-          className="m-0 grid list-none gap-6 p-0 sm:grid-cols-2 lg:flex lg:w-full lg:gap-7 lg:overflow-visible"
-          style={{ perspective: 1400 }}
-        >
-          {projects.map((p, i) => (
-            <li key={p.slug} className="work-card-3d lg:w-[420px] lg:shrink-0" style={{ transformStyle: "preserve-3d" }}>
-              <ProjectCard project={p} index={i} onOpen={() => open(p.slug)} />
-            </li>
-          ))}
-          <li aria-hidden className="hidden lg:block lg:w-[8vw] lg:shrink-0" />
-        </ul>
-      </div>
+      <ol className="wrap m-0 grid list-none gap-6 p-0 [perspective:1400px]">
+        {projects.map((p, i) => (
+          <li key={p.slug} className="wk-card sticky" style={{ top: `calc(88px + ${i * 12}px)`, zIndex: i + 1 }}>
+            <article className="wk-inner grid min-h-[min(640px,76svh)] origin-top overflow-hidden rounded-[26px] border border-[var(--line)] will-change-transform lg:grid-cols-[1.1fr_0.9fr]" style={{ background: "var(--bg-2)", boxShadow: "0 -20px 60px -30px rgba(0,0,0,.35)" }}>
+              <div className="flex flex-col justify-between gap-8 p-6 sm:p-10">
+                <div className="mono flex items-center justify-between gap-4">
+                  <span className="text-[var(--accent)]">
+                    {String(i + 1).padStart(2, "0")} / {String(projects.length).padStart(2, "0")}
+                  </span>
+                  <span className="muted text-right">{p.kind}</span>
+                </div>
+                <div className="grid gap-5">
+                  <h3 className="text-[clamp(34px,5vw,76px)] leading-[0.95] tracking-[-0.045em]">{p.name}</h3>
+                  <p className="muted max-w-[52ch] text-[16px]">{p.overview}</p>
+                  <ul className="m-0 grid list-none gap-1.5 p-0 text-[15px]">
+                    {p.features.map((f) => (
+                      <li key={f} className="flex gap-3">
+                        <span className="mt-[0.65em] h-px w-4 shrink-0 bg-[var(--accent)]" aria-hidden />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <PillButton
+                    variant="solid"
+                    onClick={(e) => {
+                      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                      setOpen({ p, x: r.left + r.width / 2, y: r.top + r.height / 2 });
+                    }}
+                    aria-haspopup="dialog"
+                  >
+                    Open case <span aria-hidden>→</span>
+                  </PillButton>
+                  {p.stack.slice(0, 3).map((s) => (
+                    <span key={s} className="chip hidden sm:inline-flex">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="relative hidden min-h-[320px] border-t border-[var(--line)] lg:block lg:border-t-0 lg:border-l">
+                <Orbit p={p} />
+              </div>
+            </article>
+          </li>
+        ))}
+      </ol>
 
-      <AnimatePresence>{current ? <ProjectDetail key={current.slug} project={current} onClose={close} /> : null}</AnimatePresence>
+      <AnimatePresence>{open ? <CaseStudy key={open.p.slug} {...open} onClose={() => setOpen(null)} /> : null}</AnimatePresence>
     </section>
   );
 }
 
-function ProjectCard({ project, index, onOpen }: { project: Project; index: number; onOpen: () => void }) {
+/** A module diagram: the product at the core, its features in orbit. */
+function Orbit({ p }: { p: Project }) {
+  const nodes = p.features;
+  const initials = p.name
+    .split(/\s+/)
+    .filter((w) => /^[A-Za-z]/.test(w))
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("");
   return (
-    <Tilt className="relative h-full rounded-[22px] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] transition-colors hover:border-[var(--ink)]" max={8}>
-      <button
-        type="button"
-        onClick={onOpen}
-        data-cursor="view"
-        className="flex h-full w-full cursor-pointer flex-col text-left"
-        aria-label={`Open project details: ${project.name}`}
-        style={{ transformStyle: "preserve-3d" }}
-      >
-        <motion.div layoutId={`media-${project.slug}`} className="overflow-hidden rounded-t-[22px] border-b border-[var(--line)] bg-[var(--bg)]" style={{ transform: "translateZ(20px)" }}>
-          <ProjectDiagram project={project} index={index} />
-        </motion.div>
-        <div className="flex flex-1 flex-col gap-3 p-6" style={{ transform: "translateZ(36px)" }}>
-          <div className="flex items-center justify-between gap-3">
-            <span className="label">{project.kind}</span>
-            <span className="font-mono text-xs text-[var(--ink-2)]">{String(index + 1).padStart(2, "0")}/{String(projects.length).padStart(2, "0")}</span>
-          </div>
-          <motion.h3 layoutId={`title-${project.slug}`} className="text-[26px] leading-tight font-bold tracking-[-0.02em]" style={{ fontStretch: "112%" }}>
-            {project.name}
-          </motion.h3>
-          <p className="text-[15px] text-[var(--ink-2)]">{project.overview}</p>
-          <span className="mt-auto inline-flex items-center gap-1 pt-2 text-sm font-semibold">
-            View details <ArrowUpRight size={16} />
-          </span>
-        </div>
-      </button>
-    </Tilt>
+    <div className="absolute inset-0 grid place-items-center overflow-hidden" aria-hidden>
+      <div className="absolute aspect-square w-[66%] rounded-full border border-dashed border-[var(--line)]" />
+      <div className="absolute aspect-square w-[38%] rounded-full border border-[var(--line)]" />
+      <div className="orbit-spin absolute aspect-square w-[66%]">
+        {nodes.map((f, i) => {
+          const a = (i / nodes.length) * 360;
+          return (
+            <div key={f} className="absolute h-0 w-0" style={{ left: `${50 + Math.cos((a * Math.PI) / 180) * 50}%`, top: `${50 + Math.sin((a * Math.PI) / 180) * 50}%` }}>
+              <div className="orbit-spin-rev -translate-x-1/2 -translate-y-1/2">
+                <span className="chip max-w-[130px] !whitespace-normal bg-[var(--bg)] text-center leading-snug">{f}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="relative grid h-28 w-28 place-items-center rounded-full bg-[var(--ink)] text-[var(--bg)] shadow-[0_0_0_10px_color-mix(in_srgb,var(--accent)_16%,transparent)]">
+        <span className="font-[family-name:var(--font-display)] text-[28px] font-bold tracking-[-0.04em]">{initials}</span>
+      </div>
+      <span className="mono absolute bottom-5 left-6 muted">Module map · {nodes.length} parts</span>
+    </div>
   );
 }
 
-function ProjectDetail({ project, onClose }: { project: Project; onClose: () => void }) {
+function CaseStudy({ p, x, y, onClose }: { p: Project; x: number; y: number; onClose: () => void }) {
   const closeBtn = useRef<HTMLButtonElement>(null);
-  const index = projects.findIndex((p) => p.slug === project.slug);
   useEffect(() => {
-    closeBtn.current?.focus();
-  }, []);
+    const prev = document.activeElement as HTMLElement | null;
+    closeBtn.current?.focus({ preventScroll: true });
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      prev?.focus({ preventScroll: true });
+    };
+  }, [onClose]);
 
   return (
-    <motion.div className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-labelledby={`dlg-${project.slug}`}>
-      <motion.button
-        type="button"
-        aria-label="Close project details"
-        tabIndex={-1}
-        onClick={onClose}
-        className="absolute inset-0 cursor-default bg-[color-mix(in_srgb,var(--ink)_55%,transparent)] backdrop-blur-sm"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      />
-      <motion.div
-        className="relative max-h-[92svh] w-full max-w-[920px] overflow-y-auto rounded-t-[26px] border border-[var(--line)] bg-[var(--bg)] shadow-2xl sm:m-6 sm:rounded-[26px]"
-        style={{ transformPerspective: 1400 }}
-        initial={{ opacity: 0, rotateX: 18, y: 80 }}
-        animate={{ opacity: 1, rotateX: 0, y: 0 }}
-        exit={{ opacity: 0, rotateX: -10, y: 40 }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-        data-lenis-prevent
-      >
-        <button
-          ref={closeBtn}
-          type="button"
-          onClick={onClose}
-          className="sticky top-3 z-10 float-right mr-3 grid h-11 w-11 place-items-center rounded-full bg-[var(--ink)] text-[var(--bg)]"
-          aria-label="Close project details"
+    <motion.div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={`case-${p.slug}`}
+      className="fixed inset-0 z-[120] overflow-y-auto bg-[var(--bg)]"
+      initial={{ clipPath: `circle(0px at ${x}px ${y}px)` }}
+      animate={{ clipPath: `circle(150vmax at ${x}px ${y}px)` }}
+      exit={{ clipPath: `circle(0px at ${x}px ${y}px)` }}
+      transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
+      data-lenis-prevent
+    >
+      <div className="wrap grid gap-12 pt-24 pb-20">
+        <div className="flex items-start justify-between gap-6">
+          <span className="mono kicker">Case study · {p.kind}</span>
+          <button ref={closeBtn} type="button" onClick={onClose} className="mono flex h-11 items-center gap-3 rounded-full bg-[var(--ink)] px-5 text-[var(--bg)]">
+            Close <span aria-hidden>✕</span>
+          </button>
+        </div>
+        <motion.h2
+          id={`case-${p.slug}`}
+          className="h-xl max-w-[14ch]"
+          initial={{ y: 60, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.35, duration: 1, ease: [0.16, 1, 0.3, 1] }}
         >
-          <X size={18} />
-        </button>
-        <motion.div layoutId={`media-${project.slug}`} className="border-b border-[var(--line)] bg-[var(--bg-2)]">
-          <div className="mx-auto max-w-[620px]">
-            <ProjectDiagram project={project} index={100 + index} />
+          {p.name}
+        </motion.h2>
+        <motion.div
+          className="grid gap-12 lg:grid-cols-[1.2fr_1fr]"
+          initial={{ y: 40, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="grid content-start gap-10">
+            <p className="text-[clamp(18px,1.6vw,22px)]">{p.overview}</p>
+            <Block title="What I built">
+              <ol className="m-0 grid list-none gap-4 p-0">
+                {p.contributions.map((c, i) => (
+                  <li key={c} className="grid grid-cols-[36px_1fr] gap-3 border-t border-[var(--line)] pt-4">
+                    <span className="mono text-[var(--accent)]">{String(i + 1).padStart(2, "0")}</span>
+                    <span>{c}</span>
+                  </li>
+                ))}
+              </ol>
+            </Block>
           </div>
-        </motion.div>
-        <div className="grid gap-8 p-6 sm:p-10">
-          <div className="grid gap-3">
-            <span className="label">{project.kind}</span>
-            <motion.h3 layoutId={`title-${project.slug}`} id={`dlg-${project.slug}`} className="display text-[clamp(34px,5vw,60px)]">
-              {project.name}
-            </motion.h3>
-            <p className="max-w-[60ch] text-[18px]">{project.overview}</p>
-          </div>
-
-          <dl className="grid gap-6 border-y border-[var(--line)] py-6 sm:grid-cols-3">
-            <div className="grid gap-1">
-              <dt className="label">My role</dt>
-              <dd className="m-0 font-semibold">{project.role}</dd>
-            </div>
-            <div className="grid gap-1 sm:col-span-2">
-              <dt className="label">Technology</dt>
-              <dd className="m-0 flex flex-wrap gap-2">
-                {project.stack.length ? (
-                  project.stack.map((s) => (
-                    <span key={s} className="tag">
-                      {s}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-[var(--ink-2)]">Stack details on request</span>
-                )}
-              </dd>
-            </div>
-          </dl>
-
-          <div className="grid gap-10 sm:grid-cols-2">
-            <div className="grid content-start gap-3">
-              <h4 className="label">Key features</h4>
+          <div className="grid content-start gap-10">
+            <Block title="Role">
+              <p>{p.role}</p>
+            </Block>
+            <Block title="Features">
               <ul className="m-0 grid list-none gap-2 p-0">
-                {project.features.map((f) => (
-                  <li key={f} className="flex gap-3">
-                    <span aria-hidden className="mt-[9px] h-2 w-2 shrink-0 rotate-45 bg-[var(--mark)] outline outline-1 outline-[var(--ink)]" />
+                {p.features.map((f) => (
+                  <li key={f} className="muted">
                     {f}
                   </li>
                 ))}
               </ul>
-            </div>
-            <div className="grid content-start gap-3">
-              <h4 className="label">What I did</h4>
-              <ul className="m-0 grid list-none gap-2 p-0">
-                {project.contributions.map((c) => (
-                  <li key={c} className="flex gap-3">
-                    <span aria-hidden className="mt-[9px] h-2 w-2 shrink-0 rounded-full bg-[var(--ink)]" />
-                    {c}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            </Block>
+            {p.stack.length ? (
+              <Block title="Stack">
+                <div className="flex flex-wrap gap-2">
+                  {p.stack.map((s) => (
+                    <span key={s} className="chip">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </Block>
+            ) : null}
+            <p className="mono rounded-[12px] border border-dashed border-[var(--line)] p-4 muted">
+              Built at ITPlusPoint. There is no public demo or repository to link for this project.
+            </p>
           </div>
-
-          <p className="rounded-2xl border border-dashed border-[var(--line)] p-4 text-[14px] text-[var(--ink-2)]">
-            No public demo or repository is linked for this project. The diagram above shows its main modules.
-          </p>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </motion.div>
+  );
+}
+
+function Block({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-4">
+      <h3 className="mono muted">{title}</h3>
+      {children}
+    </div>
   );
 }
