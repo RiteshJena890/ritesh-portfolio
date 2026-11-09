@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ritesh Jena · Portfolio
 
-## Getting Started
+Personal portfolio for Ritesh Jena, Software Consultant at ITPlusPoint. Next.js (App Router) + TypeScript, Tailwind CSS v4, Motion, GSAP ScrollTrigger, Lenis and React Three Fiber.
 
-First, run the development server:
+## Structure
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+src/
+  app/                layout, page, not-found, error, robots, sitemap, opengraph-image
+    api/contact/      contact form handler (Resend)
+  components/
+    sections/         loader, nav, hero, about, services, stack, experience, work, recognition, contact, footer
+    motion/           motion root (Lenis + GSAP), reveal, split-text, tilt, magnetic, cursor
+    three/            stack-scene (3D hero)
+    ui/               section-head, project-diagram
+  content/profile.ts  every fact and line of copy on the site
+  lib/                contact form validation (zod)
+public/               resume PDF, profile photo
+scripts/              build-preview.mjs (static preview build)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+To change text, add a project or set the GitHub link, edit `src/content/profile.ts`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Local development
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+cp .env.example .env.local   # then add your Resend API key
+npm run dev                  # http://localhost:3000
+```
 
-## Learn More
+## Checks and production build
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Environment variables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Name | Required | Purpose |
+| --- | --- | --- |
+| `RESEND_API_KEY` | Yes, for the contact form | API key from resend.com |
+| `CONTACT_TO_EMAIL` | Yes, for the contact form | Inbox that receives messages |
+| `CONTACT_FROM_EMAIL` | No | Sender address on a domain verified in Resend |
 
-## Deploy on Vercel
+Without the first two, the site works and the form shows a "not set up yet" message instead of sending.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploy to Vercel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push this folder to a GitHub repository.
+2. In Vercel, choose Add New → Project and import the repository. The Next.js preset needs no changes.
+3. Add the environment variables above under Settings → Environment Variables.
+4. Deploy. To use riteshjena.co.in, add it under Settings → Domains and update DNS as Vercel shows.
+
+## Static preview
+
+`npm run build:preview` writes a server-free copy to `out/` (contact sending disabled) for sharing as a preview.
