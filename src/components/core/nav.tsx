@@ -32,14 +32,8 @@ function useClock() {
 function useTheme() {
   const [dark, setDark] = useState(false);
   useEffect(() => {
-    const read = () => {
-      const a = document.documentElement.getAttribute("data-theme");
-      setDark(a ? a === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches);
-    };
-    read();
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    mq.addEventListener("change", read);
-    return () => mq.removeEventListener("change", read);
+    // light by default; dark only when the visitor chose it
+    setDark(document.documentElement.getAttribute("data-theme") === "dark"); // eslint-disable-line react-hooks/set-state-in-effect -- reads the theme set before paint
   }, []);
   const toggle = () => {
     const next = dark ? "light" : "dark";

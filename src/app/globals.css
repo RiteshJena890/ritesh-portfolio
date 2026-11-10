@@ -31,23 +31,7 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #06070a;
-    --bg-2: #0d0f15;
-    --panel: rgba(20, 23, 32, 0.55);
-    --ink: #e9ecf2;
-    --ink-2: #9aa1b2;
-    --ink-3: #6b7282;
-    --line: rgba(233, 236, 242, 0.12);
-    --accent: #7c88ff;
-    --accent-ink: #06070a;
-    --danger: #ff7a70;
-    --glass: rgba(6, 7, 10, 0.6);
-    --particle: #8089a3;
-    color-scheme: dark;
-  }
-}
+/* Light is the default for everyone; dark applies only when the visitor picks it. */
 :root[data-theme="dark"] {
   --bg: #06070a;
   --bg-2: #0d0f15;
