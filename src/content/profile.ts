@@ -13,7 +13,7 @@ export const site = {
   email: "riteshjena2002@gmail.com",
   linkedin: "https://www.linkedin.com/in/ritesh-jena-8b2b2326b/",
   // Add the GitHub profile URL here once confirmed; the link appears automatically.
-  github: "" as string,
+  github: "https://github.com/RiteshJena890" as string,
   resume: `${base}/Ritesh-Jena-Resume.pdf`,
   photo: `${base}/ritesh-jena.jpg`,
   description:
