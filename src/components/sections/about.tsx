@@ -38,7 +38,8 @@ export function About() {
   const accentWords = new Set(["SQL", "screen,", "AI"]);
 
   return (
-    <section ref={root} id="about" data-shape="1" data-alpha="0.4" className="relative" aria-labelledby="about-title">
+    <section ref={root} id="about" className="relative" aria-labelledby="about-title">
+      <div data-shape="1" data-alpha="0.3">
       <div className="mf-pin flex min-h-[100svh] items-center py-28">
         <div className="wrap grid gap-10">
           <h2 id="about-title" className="mono kicker">
@@ -68,7 +69,10 @@ export function About() {
         </div>
       </div>
 
-      <div className="wrap grid gap-16 pb-32 lg:grid-cols-[1fr_1fr]">
+      </div>
+
+      {/* reading block: the ribbon fades almost out so the text stays clear */}
+      <div data-shape="1" data-alpha="0.06" className="wrap grid gap-16 pb-32 lg:grid-cols-[1fr_1fr]">
         <div className="grid content-start gap-6 text-[clamp(16px,1.25vw,18.5px)]">
           {about.paragraphs.map((p, i) => (
             <p key={i} className={i === 0 ? "" : "muted"}>

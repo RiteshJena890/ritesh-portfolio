@@ -57,7 +57,7 @@ export function Hero() {
       </div>
 
       {/* The name is drawn by the particle field; this is the accessible and no-WebGL version */}
-      <div className="wrap relative flex flex-1 items-center justify-center max-md:min-h-[34svh] max-md:items-start">
+      <div id="hero-stage" className="wrap relative flex min-h-[30svh] flex-1 items-center justify-center max-md:min-h-[34svh]">
         <h1 id="hero-name" className="gl-name-fallback h-xl text-center font-bold">
           {site.name}
         </h1>

@@ -84,6 +84,8 @@ const vertex = /* glsl */ `
 
 const fragment = /* glsl */ `
   uniform vec3 uInk;
+  uniform vec3 uSoft;
+  uniform float uStrong;
   uniform vec3 uAccent;
   uniform float uAlpha;
   varying float vAccent;
@@ -93,7 +95,8 @@ const fragment = /* glsl */ `
     float r = length(c);
     if (r > 0.5) discard;
     float a = smoothstep(0.5, 0.15, r);
-    vec3 col = mix(uInk, uAccent, clamp(vAccent, 0.0, 1.0));
+    vec3 base = mix(uSoft, uInk, uStrong);
+    vec3 col = mix(base, uAccent, clamp(vAccent, 0.0, 1.0));
     gl_FragColor = vec4(col, a * uAlpha * vFade);
   }
 `;
@@ -143,6 +146,8 @@ export function ParticleField() {
       uSphereX: { value: 0 },
       uSpin: { value: 0 },
       uInk: { value: new THREE.Color() },
+      uSoft: { value: new THREE.Color() },
+      uStrong: { value: 1 },
       uAccent: { value: new THREE.Color() },
       uAlpha: { value: 1 },
     };
@@ -153,6 +158,7 @@ export function ParticleField() {
 
     const readColors = () => {
       uniforms.uInk.value.set(css("--ink") || "#0b0d12");
+      uniforms.uSoft.value.set(css("--particle") || "#8a91a3");
       uniforms.uAccent.value.set(css("--accent") || "#2b3bff");
     };
     readColors();
@@ -173,9 +179,24 @@ export function ParticleField() {
       uniforms.uPixel.value = (h * dpr) / (2 * Math.tan((50 * Math.PI) / 360));
       uniforms.uSphereX.value = view.mobile ? 0 : view.w * 0.2;
       const nameLines = view.mobile ? ["RITESH", "JENA"] : ["RITESH JENA"];
-      const nameW = view.mobile ? view.w * 0.9 : Math.min(view.w * 0.86, 15);
+      // Fit the name inside the empty stage the hero leaves for it, so it never sits on text.
+      let nameW = view.mobile ? view.w * 0.9 : Math.min(view.w * 0.86, 15);
+      let nameY = view.mobile ? view.h * 0.13 : view.h * 0.1;
+      let nameX = 0;
+      let nameMaxH: number | undefined;
+      const stage = document.getElementById("hero-stage");
+      if (stage) {
+        const r = stage.getBoundingClientRect();
+        const top = r.top + window.scrollY;
+        const toX = (px: number) => (px / w - 0.5) * view.w;
+        const toY = (py: number) => -(py / h - 0.5) * view.h;
+        nameW = Math.min(nameW, (r.width / w) * view.w * 0.96);
+        nameX = toX(r.left + r.width / 2);
+        nameY = toY(top + r.height / 2);
+        nameMaxH = Math.max(0.6, (r.height / h) * view.h * 0.82);
+      }
       const shapes = [
-        textShape(nameLines, N, view, { width: nameW, y: view.mobile ? view.h * 0.13 : view.h * 0.1 }),
+        textShape(nameLines, N, view, { width: nameW, x: nameX, y: nameY, maxH: nameMaxH }),
         ribbonShape(N, view),
         torusShape(N, view),
         sphereShape(N, view),
@@ -277,6 +298,8 @@ export function ParticleField() {
       const ease = reduced ? 1 : 1 - Math.pow(0.0025, dt);
       for (let i = 0; i < SHAPES; i++) w[i] += (target[i] - w[i]) * ease;
       uniforms.uAlpha.value += (targetAlpha - uniforms.uAlpha.value) * ease;
+      // full ink only while the particles spell the name; softer everywhere else
+      uniforms.uStrong.value = Math.min(1, Math.max(0, w[0]));
       uniforms.uMouse.value.lerp(mouseTarget, 1 - Math.pow(0.001, dt));
       uniforms.uMouseForce.value += (mouseActive - uniforms.uMouseForce.value) * ease;
       // camera leans gently with the pointer

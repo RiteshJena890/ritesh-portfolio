@@ -9,7 +9,7 @@ const rand = (() => {
 })();
 
 /** Sample filled pixels of text drawn on a canvas and map them into world space. */
-export function textShape(lines: string[], n: number, v: View, opts: { width: number; y: number; x?: number; weight?: number }) {
+export function textShape(lines: string[], n: number, v: View, opts: { width: number; y: number; x?: number; weight?: number; maxH?: number }) {
   const cw = 1400;
   const fontSize = 220;
   const lh = fontSize * 1.02;
@@ -48,8 +48,12 @@ export function textShape(lines: string[], n: number, v: View, opts: { width: nu
   const count = pts.length / 2;
   const bw = Math.max(1, maxX - minX);
   const bh = Math.max(1, maxY - minY);
-  const worldW = opts.width;
-  const worldH = (bh / bw) * worldW;
+  let worldW = opts.width;
+  let worldH = (bh / bw) * worldW;
+  if (opts.maxH && worldH > opts.maxH) {
+    worldW *= opts.maxH / worldH;
+    worldH = opts.maxH;
+  }
   for (let i = 0; i < n; i++) {
     const k = count ? Math.floor(rand() * count) : 0;
     const px = count ? pts[k * 2] + (rand() - 0.5) * step : 0;

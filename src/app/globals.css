@@ -19,6 +19,7 @@
   --accent-ink: #ffffff;
   --danger: #c4231b;
   --glass: rgba(236, 238, 241, 0.62);
+  --particle: #9aa1b2;
 
   --font-display: "Unbounded Variable", "Arial Black", system-ui, sans-serif;
   --font-body: "Instrument Sans Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -43,6 +44,7 @@
     --accent-ink: #06070a;
     --danger: #ff7a70;
     --glass: rgba(6, 7, 10, 0.6);
+    --particle: #8089a3;
     color-scheme: dark;
   }
 }
@@ -58,6 +60,7 @@
   --accent-ink: #06070a;
   --danger: #ff7a70;
   --glass: rgba(6, 7, 10, 0.6);
+  --particle: #8089a3;
   color-scheme: dark;
 }
 
